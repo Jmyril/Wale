@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.DS_Store
+venv/
+output_images/
+models/big_pools.json
+models/user_brain.json
+models/user_session.json
+models/sessions/
+paragraph_*.svg
+.cache/

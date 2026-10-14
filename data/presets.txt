@@ -1,0 +1,10 @@
+# Pre-taught facts for Wale. One statement per line, loaded into the
+# session-only layer at startup. '#' starts a comment. Empty lines ignored.
+#
+# These live in RAM only and fade as the chat goes on; a restart just reloads
+# them from this file. This is data you own, not code baked into the bot.
+# (Math is handled by the calculator tool in src/calculator.py, not here.)
+#
+# Examples (uncomment to use):
+# the apple is 4
+# the sky is blue

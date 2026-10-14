@@ -1,0 +1,8 @@
+# Hosts Wale is allowed to fetch, one per line. Matching is suffix-based,
+# so "wikipedia.org" also allows "en.wikipedia.org", "vi.wikipedia.org", etc.
+# Lines starting with # are ignored. The built-in list lives in
+# src/wikicrawl.py (wikipedia, wikimedia, wiktionary, wikiquote, ...).
+#
+# Add trusted hosts below, for example:
+#   simple.wikipedia.org
+#   plato.stanford.edu
