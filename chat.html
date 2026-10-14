@@ -126,6 +126,7 @@
       const pushUser = makeRevealer(userLine, 28);
       message.split(/\s+/).forEach(pushUser);
       await pushUser.done();
+      userLine.scrollIntoView({ block: "nearest", behavior: "smooth" });
 
       const botLine = makeLine("bot");
       const pushBot = makeRevealer(botLine, 55);
@@ -169,6 +170,7 @@
       } finally {
         inputEl.disabled = false;
         inputEl.focus();
+        botLine.scrollIntoView({ block: "end", behavior: "smooth" });
       }
     }
 
@@ -181,6 +183,8 @@
     });
 
     window.addEventListener("load", () => inputEl.focus());
+    document.addEventListener("click", () => inputEl.focus());
+    document.addEventListener("keydown", () => inputEl.focus());
   </script>
 </body>
 </html>
