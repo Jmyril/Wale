@@ -30,7 +30,7 @@ from chatbot import get_bot, WaleBot  # noqa: E402
 
 HOST = os.environ.get("HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT", "8000"))
-WEB_DIR = os.path.join(BASE_DIR, "web")
+WEB_DIR = BASE_DIR
 
 # Per-visitor brains. Off by default (one shared bot, one shared brain). Set
 # WALE_MULTIUSER=1 to give every session id its own session + learnable layer.
@@ -39,7 +39,9 @@ SESSION_DIR = os.path.join(BASE_DIR, "models", "sessions")
 MAX_SESSIONS = int(os.environ.get("WALE_MAX_SESSIONS", "64"))
 
 _STATIC = {
-    "/": ("index.html", "text/html; charset=utf-8"),
+    "/": ("chat.html", "text/html; charset=utf-8"),
+    "/chat": ("chat.html", "text/html; charset=utf-8"),
+    "/chat.html": ("chat.html", "text/html; charset=utf-8"),
     "/index.html": ("index.html", "text/html; charset=utf-8"),
     "/app.js": ("app.js", "application/javascript; charset=utf-8"),
     "/style.css": ("style.css", "text/css; charset=utf-8"),

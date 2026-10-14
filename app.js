@@ -156,7 +156,7 @@ async function send(message) {
   }
 }
 
-formEl.addEventListener("submit", (e) => {
+if (formEl) formEl.addEventListener("submit", (e) => {
   e.preventDefault();
   const message = inputEl.value.trim();
   if (!message) return;
@@ -193,7 +193,7 @@ if (location.protocol === "file:") {
 }
 
 window.addEventListener("load", () => {
-  inputEl.focus();
+  if (inputEl) inputEl.focus();
 });
 
 // If the URL points at #chat, drop the cursor there.

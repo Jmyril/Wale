@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WALE</title>
+<style>
+  :root { --bg: #080808; --fg: #e8e8e8; --dim: #4a4a4a; --faint: #242424; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 15px;
+    line-height: 1.9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #stage {
+    width: 100%;
+    max-width: 620px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  #log {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    text-align: center;
+  }
+
+  .line { margin: 0; overflow-wrap: break-word; }
+  .line--user { color: var(--dim); }
+  .line--bot { color: var(--fg); }
+
+  .w {
+    display: inline-block;
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(0.55em);
+    animation: reveal 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  }
+  @keyframes reveal { to { opacity: 1; filter: blur(0); transform: none; } }
+
+  #composer { display: flex; }
+  #input {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--fg);
+    font: inherit;
+    text-align: center;
+    caret-color: var(--fg);
+  }
+  #input::placeholder { color: var(--faint); }
+  #input:disabled { opacity: 0.35; }
+</style>
+</head>
+<body>
+  <main id="stage">
+    <div id="log" aria-live="polite"></div>
+    <form id="composer" autocomplete="off">
+      <input id="input" type="text" placeholder="nói gì đi…" maxlength="500" required />
+    </form>
+  </main>
+
+  <script>
+    const logEl = document.getElementById("log");
+    const formEl = document.getElementById("composer");
+    const inputEl = document.getElementById("input");
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    function makeLine(who) {
+      const line = document.createElement("p");
+      line.className = "line line--" + who;
+      logEl.appendChild(line);
+      line.scrollIntoView({ block: "nearest" });
+      return line;
+    }
+
+    function makeRevealer(line, delay) {
+      const queue = [];
+      let running = false;
+      async function pump() {
+        if (running) return;
+        running = true;
+        while (queue.length) {
+          const word = queue.shift();
+          const span = document.createElement("span");
+          span.className = "w";
+          span.textContent = word;
+          line.appendChild(span);
+          line.appendChild(document.createTextNode(" "));
+          await sleep(delay);
+        }
+        running = false;
+      }
+      const push = (word) => { queue.push(word); pump(); };
+      push.done = async () => { while (running || queue.length) await sleep(30); };
+      return push;
+    }
+
+    function sessionId() {
+      let id = localStorage.getItem("wale_session");
+      if (!id) {
+        id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem("wale_session", id);
+      }
+      return id;
+    }
+
+    async function send(message) {
+      inputEl.disabled = true;
+
+      const userLine = makeLine("user");
+      const pushUser = makeRevealer(userLine, 28);
+      message.split(/\s+/).forEach(pushUser);
+      await pushUser.done();
+
+      const botLine = makeLine("bot");
+      const pushBot = makeRevealer(botLine, 55);
+      let started = false;
+
+      try {
+        const res = await fetch("/chat/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, session: sessionId() }),
+        });
+
+        if (!res.body) {
+          const data = await res.json();
+          started = true;
+          pushBot(data.reply || "...");
+        } else {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            let idx;
+            while ((idx = buffer.indexOf("\n")) >= 0) {
+              const raw = buffer.slice(0, idx).trim();
+              buffer = buffer.slice(idx + 1);
+              if (!raw) continue;
+              let obj;
+              try { obj = JSON.parse(raw); } catch { continue; }
+              if (obj.t !== undefined) { started = true; pushBot(obj.t); }
+            }
+          }
+          if (!started) { started = true; pushBot("..."); }
+        }
+        await pushBot.done();
+      } catch (err) {
+        if (!started) pushBot("(hỏng rồi, thử lại)");
+        await pushBot.done();
+      } finally {
+        inputEl.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    formEl.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const message = inputEl.value.trim();
+      if (!message) return;
+      inputEl.value = "";
+      send(message);
+    });
+
+    window.addEventListener("load", () => inputEl.focus());
+  </script>
+</body>
+</html>
